@@ -3,3 +3,6 @@ __pycache__/
 reports/
 my_report/
 git_insights_output/
+integrated_output/
+output/
+

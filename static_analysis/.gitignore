@@ -1,0 +1,5 @@
+output/
+Sublist3r/
+__pycache__/
+*.pyc
+.venv/
