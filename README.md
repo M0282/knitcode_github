@@ -1,4 +1,58 @@
-# Knitcode Git Insights v2 — 로컬 편집본
+# KnitCode — 팀 정적분석 + GitHub 변경 분석
+
+이 브랜치는 팀 `GreatJung1/KnitCode`의 정적분석 엔진에 기존 Git Insights를 연결한 통합 버전입니다.
+원본 엔진과 테스트는 `static_analysis/`에 보관하고, 기존 Git 분석 실행 방식도 유지합니다.
+가져온 소스와 기준 커밋은 [UPSTREAM_STATIC_ANALYSIS.md](UPSTREAM_STATIC_ANALYSIS.md)에 기록했습니다.
+
+## 통합 실행 (Windows)
+
+Python 3.10 이상과 Git이 필요합니다. 추가 pip 패키지는 없습니다.
+
+```powershell
+py integrated_cli.py https://github.com/dbader/schedule --commits 50 --output integrated_output
+start integrated_output\index.html
+```
+
+또는 `run_integrated_windows.bat`를 실행하고 대상 URL/로컬 Git 경로를 입력합니다.
+다시 분석할 때는 기존 결과를 덮어쓰지 않도록 `--output integrated_output_2`처럼 새 폴더를 지정하세요.
+
+```powershell
+py integrated_cli.py "C:\Users\우성한\Downloads\target_repo" --revision main --commits 100 --output integrated_output_2
+```
+
+- `--revision`: 분석할 브랜치·태그·커밋. 기본 HEAD.
+- `--source-root src`: 팀 엔진에 전달할 import 루트. 반복 지정 가능, 생략 시 자동 감지.
+- `--since YYYY-MM-DD`, `--until YYYY-MM-DD`, `--aliases aliases.json`, `--pair-limit 40`: Git 분석 범위.
+- `--github-api --api-commits 20`: GitHub URL의 PR·Issue·Checks·Status 조회. `GITHUB_TOKEN`은 선택 환경변수.
+- `--static-timeout 600`: 정적분석 최대 시간(초).
+
+### 통합 결과
+
+| 파일 | 내용 |
+|---|---|
+| `index.html` | 함수별 작성자·변경 근거·기준 커밋의 직접 호출 후보, 검색·필터, 개별 보고서 링크 |
+| `integrated_result.json` | 동일 커밋을 기준으로 연결한 구조화 결과 |
+| `static/report.html` | 팀 정적분석 보고서 |
+| `static/*_result.json` | AST, 심볼, 호출 그래프 원본 분석 결과 |
+| `git/report.html` | 기존 Git Insights 전체 보고서 |
+| `git/git_insights.json` | 작성자, 함수 변경, 동시 수정, 집중 영역, 테스트 후보, 선택적 API 결과 |
+
+통합 실행은 분석 대상의 커밋을 한 번 확정하고 해당 커밋의 파일을 임시 폴더에 복원합니다.
+로컬 미커밋 변경과 무관하게 정적분석·Git 분석의 커밋이 일치하며, 대상 Python 코드는 실행하지 않습니다.
+심볼릭 링크와 서브모듈 내부는 제외하고 경고를 기록합니다. Git이 추적하는 일반 파일을 복사하므로
+대형 저장소는 임시 디스크 공간과 시간이 필요합니다. GitHub 입력은 전체 Git 이력을 한 번 clone합니다.
+
+**연결 의미:** `파일 경로 + 한정 함수명`이 같은 기준 커밋의 심볼 후보를 찾습니다.
+삭제·이동·이름 변경은 미연결될 수 있고 중복 정의는 연결을 보류합니다.
+과거 함수와 현재 함수의 동일성, 과거 호출 관계, 실제 실행 영향 범위를 증명하지 않습니다.
+직접 호출 관계는 팀 엔진의 may-call·확실성 근거를 그대로 유지합니다.
+파일 동시 수정 관계는 호출 관계와 구분하여 기존 Git 보고서에서 확인합니다.
+
+테스트 실행 방법: [UPSTREAM_STATIC_ANALYSIS.md](UPSTREAM_STATIC_ANALYSIS.md#회귀-검증).
+
+---
+
+# 기존 Knitcode Git Insights v2 사용법
 
 외부 Python 프로젝트의 GitHub URL을 받아 Git 변경 이력만 분석합니다.
 기존 v0.6 폴더에 덮어쓸 필요 없는 독립 실행본이며 모든 Python·HTML 소스를 편집할 수 있습니다.
@@ -164,3 +218,4 @@ AI 원인 분석이나 수정 성공 판정은 수행하지 않습니다.
 통합 테스트 6개 통과. 실제 dbader/schedule의 3개 커밋 분석과 PR API 연결 확인.
 일부 Issue/CI 요청은 GitHub HTTP 403 호출 제한으로 미수집되어 예시 보고서에
 경고가 포함됩니다. 인증 토큰을 이용한 비공개 저장소 조회는 검증하지 않았습니다.
+
